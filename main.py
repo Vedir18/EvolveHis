@@ -6,8 +6,8 @@ def main():
     inits = {
         'arguments': None,
         'sigmas': None,
-        'dim': 2,
-        'lmbd': 100,
+        'dim': 1,
+        'lmbd': 90,
         'mu': 150,
         'initial_len': 200
     }
@@ -15,6 +15,7 @@ def main():
 
     # by now generated the initial population
     generation = 0
+    breakpoint()
     # later make a better stop condition
     while generation < 1000:
 
@@ -27,7 +28,7 @@ def main():
         optimization.population.pool.sort(reverse=True) # implement better sorting here
         optimization.population.living_selector()
         generation += 1
-        print(generation)
+        print(f"Generation {generation}, num_of_individs = {len(optimization.population.individuals)}. Best: {optimization.population.find_best()}")
     
     print(optimization.population.find_best())
 

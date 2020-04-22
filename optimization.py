@@ -24,8 +24,8 @@ class Optimization():
             arguments, sigmas = [], []
             for j in range(self.dim):
                 # give it some use!!!
-                argument = normal(0, 1)
-                sigma = normal(0, 1) 
+                argument = uniform(-100, 100)
+                sigma = uniform(0, 25) 
                 arguments.append(argument)
                 sigmas.append(sigma)
             individs.append(Individual({'arguments': arguments, 'sigmas': sigmas}))
