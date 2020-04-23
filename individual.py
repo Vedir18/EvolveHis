@@ -1,4 +1,4 @@
-from tests import quadratic_sum
+from tests import quadratic_sum, sergei_function
 class Individual():
 
     individ_id = 0
@@ -7,11 +7,11 @@ class Individual():
         self.sigmas = init_params['sigmas']
         Individual.individ_id += 1
         self.pers_id = Individual.individ_id
-        self.fitness_func = quadratic_sum
+        self.fitness_func = sergei_function
         self.value = self.fitness_func(self.arguments)
 
     def __repr__(self):
-        return f"ID: {self.pers_id}, args: {self.arguments}"
+        return f"ID: {self.pers_id}, value: {self.value}\narguments: {self.arguments}"
 
     def __lt__(self, other):
-        self.value < other.value
+        return self.value < other.value

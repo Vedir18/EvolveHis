@@ -20,17 +20,32 @@ class Population():
         # the worst automatically gets the ticket to worst_ever
         # the best automatically gets the ticket to new generation
         # else: Roulette selection
-        self.pool.sort(reverse=True)
-        worst = self.find_worst()
-        best = self.find_worst()
-        self.worst_ever.append(worst)
-        self.individuals.append(best)
 
-        # mu - 1 tickets
+        # copies population to pool
+        self.pool = self.individuals.copy()
+
+        # produces the offsprings and adds them to a new generation
+        new_generation, best, worst = self.produce()
+        self.pool += new_generation
+
+        self.pool.sort(reverse=True)
+
+        self.worst_ever.append(worst)
+
+        # drops current self.individuals
+        self.individuals = []
+        
+        self.individuals.append(self.pool[0]) # appends best of all the time
+        self.individuals.append(best)
+        self.pool.remove(best)
+        self.pool.remove(worst)
+
+        # the best of all the time remains only in individuals - no need to be chosen
+
         tickets = []
-        for i in range(len(self.pool) - 2):
+        for i in range(len(self.pool)):
             for j in range(len(self.pool) - i):
-                tickets.append(self.pool[i + 1].pers_id)
+                tickets.append(self.pool[i].pers_id)
         
         # make a better permutation here !!!!!
         for p in permutations(tickets):
@@ -38,7 +53,7 @@ class Population():
             break
 
         chosen = []
-        for i in range(self.mu):
+        for i in range(self.mu - 2):
             index = randint(0, len(tickets) - 1)
             for el in self.pool:
                 if el.pers_id == tickets[index]:
@@ -47,18 +62,29 @@ class Population():
             # remove all the used tickets
             tickets = list(filter((tickets[index]).__ne__, tickets))
         
-        for el in self.pool:
-            if el in self.individuals:
-                self.individuals.remove(el)
+        # for el in self.pool:
+        #     if el in self.individuals:
+        #         self.individuals.remove(el)
         self.individuals += chosen
+        self.individuals.sort(reverse=True)
 
-    # we do need sort!
-    def find_best(self):
-        return self.pool[0]
+    def best_of_generation(self, offsprings):
+        best = offsprings[0]
+        for el in offsprings:
+            if el > best:
+                best = el
+        return best
+        
+    def all_time_best(self):
+        return self.individuals[0]
 
     # we do not sort, 'cause it's expensive
-    def find_worst(self):
-        return self.pool[-1]
+    def worst_of_generation(self, offsprings):
+        worst = offsprings[0]
+        for el in offsprings:
+            if el < worst:
+                worst = el
+        return worst
 
     def produce(self):
         selected = self.selection()
@@ -69,11 +95,10 @@ class Population():
             child1, child2 = self.mutation(*self.crossover(mother, father))
             offsprings.append(child1)
             offsprings.append(child2)
-        return offsprings
+        return offsprings, self.best_of_generation(offsprings), self.worst_of_generation(offsprings)
 
 
     def selection(self):
-        self.pool = self.individuals.copy()
         t_population = []
         for i in range(self.lambd):
             generated = randint(0, len(self.individuals) - 1)
@@ -90,26 +115,26 @@ class Population():
         child2_args = [a * father.arguments[i] + (1 - a) * mother.arguments[i] for i in range(len(mother.arguments))]
         child1_sigmas = [a * mother.sigmas[i] + (1 - a) * father.sigmas[i] for i in range(len(father.sigmas))]
         child2_sigmas = [a * father.sigmas[i] + (1 - a) * mother.sigmas[i] for i in range(len(mother.sigmas))]
-        return Individual({
-            'arguments': child1_args,
-            'sigmas': child1_sigmas
-        }), Individual({
-            'arguments': child2_args,
-            'sigmas': child2_sigmas
-        })
+        return (child1_args, child1_sigmas), (child2_args, child2_sigmas)
+        
 
-    def mutation(self, offspring1: Individual, offspring2: Individual):
+    def mutation(self, off1_data, off2_data):
         tau1 = 1 / numpy.sqrt(2 * self.dim)
         tau2 = 1 / numpy.sqrt(2 * numpy.sqrt(self.dim))
         sharing_rand = normal(0, 1)
         unique1, unique2 = normal(0, 1), normal(0, 1)
 
-        
-        sigmas_r1, sigmas_r2 = offspring1.sigmas.copy(), offspring2.sigmas.copy()
+        sigmas_r1, sigmas_r2 = off1_data[1].copy(), off2_data[1].copy()
         for i in range(len(sigmas_r1)):
             sigmas_r1[i], sigmas_r2[i] = sigmas_r1[i] * e ** (tau1 * sharing_rand + tau2 * unique1), sigmas_r2[i] * e ** (tau1 * sharing_rand + tau2 * unique2)
 
-        offspring1.arguments = [offspring1.arguments[i] + unique1 * sigmas_r1[i] for i in range(len(offspring1.arguments))]
-        offspring2.arguments = [offspring2.arguments[i] + unique1 * sigmas_r2[i] for i in range(len(offspring2.arguments))]
-        return offspring1, offspring2
+        arguments1 = [off1_data[0][i] + unique1 * sigmas_r1[i] for i in range(len(off1_data[0]))]
+        arguments2 = [off2_data[0][i] + unique1 * sigmas_r2[i] for i in range(len(off2_data[0]))]
+        return Individual({
+            'arguments': arguments1,
+            'sigmas': off1_data[1]
+        }), Individual({
+            'arguments': arguments2,
+            'sigmas': off2_data[1]
+        })
         
